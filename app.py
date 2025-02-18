@@ -1,25 +1,25 @@
+from flask import Flask, request, jsonify
 import yt_dlp
 
-def download_video(url, output_format='mp4'):
-    options = {
-        'format': 'bestvideo+bestaudio/best',
-        'outtmpl': 'downloads/%(title)s.%(ext)s'
-    }
-    
-    if output_format == 'mp3':
-        options.update({
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }]
-        })
+app = Flask(__name__)
 
-    with yt_dlp.YoutubeDL(options) as ydl:
-        ydl.download([url])
+@app.route("/")
+def home():
+    return "YouTube Downloader is Running!"
+
+@app.route("/download", methods=["POST"])
+def download_video():
+    data = request.get_json()
+    url = data.get("url")
+
+    if not url:
+        return jsonify({"error": "No URL provided"}), 400
+
+    ydl_opts = {"outtmpl": "/app/downloads/%(title)s.%(ext)s"}
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+
+    return jsonify({"status": "Downloaded", "title": info["title"]})
 
 if __name__ == "__main__":
-    video_url = input("Enter YouTube URL: ")
-    format_choice = input("Enter format (mp4/mp3): ").strip().lower()
-    download_video(video_url, format_choice)
+    app.run(host="0.0.0.0", port=8080)
