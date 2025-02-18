@@ -1,10 +1,25 @@
-from flask import Flask
+import yt_dlp
 
-app = Flask(__name__)
+def download_video(url, output_format='mp4'):
+    options = {
+        'format': 'bestvideo+bestaudio/best',
+        'outtmpl': 'downloads/%(title)s.%(ext)s'
+    }
+    
+    if output_format == 'mp3':
+        options.update({
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }]
+        })
 
-@app.route("/")
-def home():
-    return "Hello, DigitalOcean!"
+    with yt_dlp.YoutubeDL(options) as ydl:
+        ydl.download([url])
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    video_url = input("Enter YouTube URL: ")
+    format_choice = input("Enter format (mp4/mp3): ").strip().lower()
+    download_video(video_url, format_choice)
